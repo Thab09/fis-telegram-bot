@@ -3,20 +3,30 @@ import axios from "axios";
 import redisClient from "./redisClient.js";
 
 const airlines = {
+  "3U": "Sichuan",
+  "5W": "Wizz",
   "6E": "IndiGo",
+  "8D": "Fits Air",
+  AK: "Air Asia",
   B4: "Beond",
+  BS: "US Bangla Airlines",
+  DE: "Condor",
   EK: "Emirates",
   EY: "Etihad",
   FD: "Air Asia",
   FZ: "Fly Dubai",
   GF: "Gulf Air",
+  MF: "Xiamen Ait",
   MH: "Malaysia Airlines",
+  MU: "China Eastern",
   NR: "Manta Air",
   OD: "Batik Air",
+  PG: "Bangkok Airways",
   Q2: "Maldivian",
   QR: "Qatar Airways",
   SQ: "Singapore Airlines",
   SU: "Aeroflot",
+  TK: "Turkish Airlines",
   UL: "Srilankan Airlines",
   VP: "Villa Air",
   WK: "Edelweiss Air",
@@ -35,7 +45,7 @@ const scraper = async (url, declaration) => {
     0,
     -1
   );
-  await deletePreviousSets(declaration, allFlights);
+  await deletePreviousSets(allFlights, declaration);
 
   await redisClient.DEL(`flights:byDeclaration:${declaration}`);
 
@@ -71,11 +81,15 @@ const scraper = async (url, declaration) => {
         score: dateTime,
         value: flightKey,
       });
-      await redisClient.ZADD(`flights:byFlight:${flight}`, {
+      await redisClient.ZADD(`flights:byFlight`, {
         score: dateTime,
         value: flightKey,
       });
-      await redisClient.ZADD(`flights:byCity:${city}`, {
+      await redisClient.ZADD(`flights:byCity`, {
+        score: dateTime,
+        value: flightKey,
+      });
+      await redisClient.ZADD(`flights:byAirline`, {
         score: dateTime,
         value: flightKey,
       });
@@ -88,13 +102,15 @@ const getAirline = (flight) => {
   return airlines[flightPrefix] || "N/A";
 };
 
-const deletePreviousSets = async (allFlights) => {
+const deletePreviousSets = async (allFlights, dec) => {
   for (const flightKey of allFlights) {
     const flightData = await redisClient.HGETALL(flightKey);
-    const { flight, city } = flightData;
+    const { flight, city, declaration } = flightData;
 
-    await redisClient.DEL(`flights:byFlight:${flight}`);
-    await redisClient.DEL(`flights:byCity:${city}`);
+    if (dec === declaration) {
+      await redisClient.ZREM(`flights:byFlight:${flight}`, flightKey);
+      await redisClient.ZREM(`flights:byCity:${city}`, flightKey);
+    }
   }
 };
 

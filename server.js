@@ -3,6 +3,7 @@ import {
   getAllFlights,
   getFlightByFlight,
   getFlightByCity,
+  getFlightByAirline,
 } from "./redisService.js";
 
 const scrapeFlightData = async () => {
@@ -20,9 +21,10 @@ const main = async () => {
   // setInterval(async () => {
   await scrapeFlightData();
   // }, 300000);
-  // getFlightByFlight("EK 653", "Arrival");
   // getAllFlights("Arrival");
-  getFlightByCity("Colombo", "Arrival");
+  // getFlightByFlight("EY 278", "Arrival");
+  // getFlightByCity("Gan", "Arrival");
+  getFlightByAirline("Etihad", "Arrival");
 };
 
 main();

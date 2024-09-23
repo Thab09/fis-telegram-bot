@@ -8,47 +8,65 @@ export const getAllFlights = async (declaration) => {
       "-inf",
       "+inf"
     );
-    console.log(allFlights);
-
     for (const flight of allFlights) {
       const flightDetails = await redisClient.HGETALL(flight);
-      // console.log(JSON.stringify(flightDetails, null, 2));
+      console.log(JSON.stringify(flightDetails, null, 2));
     }
-  }, 1000); // 1 second delay to allow data insertion
+  }, 1000);
 };
 
 export const getFlightByFlight = async (flight, declaration = null) => {
   setTimeout(async () => {
     const flightByFlight = await redisClient.ZRANGEBYSCORE(
-      `flights:byFlight:${flight}`,
+      `flights:byFlight`,
       "-inf",
       "+inf"
     );
-    console.log(flightByFlight);
     for (const flightKey of flightByFlight) {
       const flightDetails = await redisClient.HGETALL(flightKey);
-      if (!declaration || flightDetails.declaration === declaration) {
-        //   console.log(JSON.stringify(flightDetails, null, 2));
+      if (flightDetails.flight.match(flight)) {
+        if (!declaration || flightDetails.declaration === declaration) {
+          console.log(JSON.stringify(flightDetails, null, 2));
+        }
       }
     }
-  }, 1000); // 1 second delay to allow data insertion
+  }, 1000);
 };
 
 export const getFlightByCity = async (city, declaration = null) => {
   //City means origin for arrivals and destination for departures
   setTimeout(async () => {
     const flightByCity = await redisClient.ZRANGEBYSCORE(
-      `flights:byCity:${city}`,
+      `flights:byCity`,
       "-inf",
       "+inf"
     );
-
-    console.log(flightByCity);
     for (const flightKey of flightByCity) {
       const flightDetails = await redisClient.HGETALL(flightKey);
-      if (!declaration || flightDetails.declaration === declaration) {
-        //   console.log(JSON.stringify(flightDetails, null, 2));
+      if (flightDetails.city.includes(city)) {
+        if (flightDetails.declaration === declaration) {
+          console.log(JSON.stringify(flightDetails, null, 2));
+        }
       }
     }
-  }, 1000); // 1 second delay to allow data insertion
+  }, 1000);
+};
+
+export const getFlightByAirline = async (airline, declaration = null) => {
+  //City means origin for arrivals and destination for departures
+  setTimeout(async () => {
+    const flightByCity = await redisClient.ZRANGEBYSCORE(
+      `flights:byAirline`,
+      "-inf",
+      "+inf"
+    );
+    for (const flightKey of flightByCity) {
+      const flightDetails = await redisClient.HGETALL(flightKey);
+      if (flightDetails.airline.includes(airline)) {
+        if (flightDetails.declaration === declaration) {
+          console.log(JSON.stringify(flightDetails, null, 2));
+        }
+      }
+    }
+  }, 1000);
 };
