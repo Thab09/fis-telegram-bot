@@ -1,4 +1,5 @@
 import scraper from "./scraper.js";
+import "./telegramBot.js";
 import {
   getAllFlights,
   getFlightByFlight,
@@ -24,7 +25,14 @@ const main = async () => {
   // getAllFlights("Arrival");
   // getFlightByFlight("EY 278", "Arrival");
   // getFlightByCity("Gan", "Arrival");
-  getFlightByAirline("Etihad", "Arrival");
+  // getFlightByAirline("Etihad", "Arrival");
 };
 
 main();
+
+/*
+- GIVE THE USERS OPTION FOR THE 3 DAYS IN SCENES
+- GIVE ONLY DATA FOR THE SPECIFIC DAY (NOT 3 DAYS)
+- FIND A SOLUTION FOR GET FLIGHT BY FLIGHT (EMPTY ARRAY)
+- SETS NOT DELETED WHEN SCRAPING
+*/

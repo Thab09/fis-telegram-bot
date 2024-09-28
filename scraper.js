@@ -19,6 +19,7 @@ const airlines = {
   MF: "Xiamen Ait",
   MH: "Malaysia Airlines",
   MU: "China Eastern",
+  NO: "Neos",
   NR: "Manta Air",
   OD: "Batik Air",
   PG: "Bangkok Airways",
@@ -26,7 +27,9 @@ const airlines = {
   QR: "Qatar Airways",
   SQ: "Singapore Airlines",
   SU: "Aeroflot",
+  SV: "Saudia",
   TK: "Turkish Airlines",
+  UK: "Vistara",
   UL: "Srilankan Airlines",
   VP: "Villa Air",
   WK: "Edelweiss Air",
@@ -105,11 +108,12 @@ const getAirline = (flight) => {
 const deletePreviousSets = async (allFlights, dec) => {
   for (const flightKey of allFlights) {
     const flightData = await redisClient.HGETALL(flightKey);
-    const { flight, city, declaration } = flightData;
+    const { flight, city, airline, declaration } = flightData;
 
     if (dec === declaration) {
       await redisClient.ZREM(`flights:byFlight:${flight}`, flightKey);
       await redisClient.ZREM(`flights:byCity:${city}`, flightKey);
+      await redisClient.ZREM(`flights:byCity:${airline}`, flightKey);
     }
   }
 };
