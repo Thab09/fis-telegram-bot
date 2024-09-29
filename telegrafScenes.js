@@ -38,8 +38,7 @@ export const flightSearchScene = new Scenes.WizardScene(
 
     const data = await getFlightByFlight(flightNumber, flightType);
 
-    // await ctx.reply(JSON.stringify(data, null, 2));
-    await ctx.reply(flightNumber);
+    await ctx.reply(JSON.stringify(data, null, 2));
 
     return ctx.scene.leave(); // Exit scene after the process is complete
   }
@@ -123,6 +122,17 @@ const toTitleCase = (text) => {
     .join(""); // Join back without altering the separators
 };
 const formatFlightCode = (flightCode) => {
-  // Convert to uppercase, then match first two letters and digits
-  return flightCode.toUpperCase().replace(/([A-Z0-9]{2})(\d+)/, "$1 $2");
+  // Remove any existing spaces and convert to uppercase
+  const cleanCode = flightCode.replace(/\s+/g, "").toUpperCase();
+
+  // Match the first two alphanumeric characters and the rest
+  const match = cleanCode.match(/^([A-Z0-9]{2})(.+)$/);
+
+  if (match) {
+    // If there's a match, return the formatted string
+    return `${match[1]} ${match[2]}`;
+  } else {
+    // If the input doesn't match the expected pattern, return it as is
+    return cleanCode;
+  }
 };
