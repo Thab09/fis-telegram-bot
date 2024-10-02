@@ -1,5 +1,6 @@
 import { Scenes } from "telegraf";
-
+import { generateFlightFile } from "./utils.js";
+import fs from "fs";
 import {
   getFlightByFlight,
   getFlightByCity,
@@ -16,6 +17,12 @@ export const flightSearchScene = new Scenes.WizardScene(
   },
   // Step 2: Capture flight number and ask for Arrival/Departure
   async (ctx) => {
+    if (ctx.message.text.length < 2) {
+      ctx.reply("Flight number should be longer than 2 characters");
+
+      ctx.wizard.selectStep(0); // Go back to step 0
+      return ctx.wizard.steps[0](ctx); // Re-execute step 0 logic
+    }
     ctx.wizard.state.data.flightNumber = await formatFlightCode(
       ctx.message.text
     ); // Save flight number
@@ -37,8 +44,19 @@ export const flightSearchScene = new Scenes.WizardScene(
     const { flightNumber, flightType } = ctx.wizard.state.data;
 
     const data = await getFlightByFlight(flightNumber, flightType);
-
-    await ctx.reply(JSON.stringify(data, null, 2));
+    if (!data) {
+      await ctx.reply("No flight data found.");
+      return ctx.scene.leave();
+    }
+    const flights = Array.isArray(data) ? data : [data];
+    const formattedData = flights
+      .map((flight) => {
+        // return `Date: ${flight.currentDate}\nAirline: ${flight.airline}\nFlight No: ${flight.flight}\nLanding Time: ${flight.time}\nCity: ${flight.city}\nETA: ${flight.eta}\nStatus: ${flight.status}\n-------------------------------- \n`;
+        return `${flight.currentDate}\n${flight.airline}\n${flight.flight}\n${flight.city}\nArrival: ${flight.time} / Eta: ${flight.eta}\nStatus: ${flight.status}\n---------------------------------------`;
+      })
+      .join("\n");
+    await ctx.reply(formattedData);
+    // await ctx.reply(JSON.stringify(data, null, 2));
 
     return ctx.scene.leave(); // Exit scene after the process is complete
   }
@@ -72,8 +90,18 @@ export const citySearchScene = new Scenes.WizardScene(
     const { cityName, flightType } = ctx.wizard.state.data;
 
     const data = await getFlightByCity(cityName, flightType);
-
-    await ctx.reply(JSON.stringify(data, null, 2));
+    if (!data) {
+      await ctx.reply("No flight data found.");
+      return ctx.scene.leave();
+    }
+    const flights = Array.isArray(data) ? data : [data];
+    const formattedData = flights
+      .map((flight) => {
+        // return `Date: ${flight.currentDate}\nAirline: ${flight.airline}\nFlight No: ${flight.flight}\nLanding Time: ${flight.time}\nCity: ${flight.city}\nETA: ${flight.eta}\nStatus: ${flight.status}\n-------------------------------- \n`;
+        return `${flight.currentDate}\n${flight.airline}\n${flight.flight}\n${flight.city}\nArrival: ${flight.time} / Eta: ${flight.eta}\nStatus: ${flight.status}\n---------------------------------------`;
+      })
+      .join("\n");
+    await ctx.reply(formattedData);
 
     return ctx.scene.leave(); // Exit scene after the process is complete
   }
@@ -102,15 +130,41 @@ export const airlineSearchScene = new Scenes.WizardScene(
   // Step 3: Capture "Arrival" or "Departure" and fetch result
   async (ctx) => {
     ctx.wizard.state.data.flightType = ctx.update.callback_query.data; // Save Arrival/Departure
+    try {
+      // Fetch results based on flight number and choice
+      const { airlineName, flightType } = ctx.wizard.state.data;
 
-    // Fetch results based on flight number and choice
-    const { airlineName, flightType } = ctx.wizard.state.data;
+      const data = await getFlightByAirline(airlineName, flightType);
 
-    const data = await getFlightByAirline(airlineName, flightType);
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        await ctx.reply("No flight data found.");
+        return ctx.scene.leave();
+      }
+      const flights = Array.isArray(data) ? data : [data];
+      const formattedData = flights
+        .map((flight) => {
+          return `${flight.currentDate}\n${flight.airline}\n${flight.flight}\n${flight.city}\nArrival: ${flight.time} / Eta: ${flight.eta}\nStatus: ${flight.status}\n---------------------------------------`;
+        })
+        .join("\n");
+      if (formattedData.length > 4096) {
+        const filePath = generateFlightFile(flights, "Arrivals");
 
-    await ctx.reply(JSON.stringify(data, null, 2));
+        // Send the file as a document
+        await ctx.sendDocument({ source: filePath });
 
-    return ctx.scene.leave(); // Exit scene after the process is complete
+        // Optional: Remove the file after sending it
+        fs.unlinkSync(filePath); // Clean up the file after sending
+      } else {
+        await ctx.reply(formattedData);
+      }
+    } catch (error) {
+      console.error("Error handling flight data:", error);
+      await ctx.reply(
+        "An error occurred while processing flight data. Please try again later."
+      );
+    } finally {
+      return ctx.scene.leave();
+    }
   }
 );
 

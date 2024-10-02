@@ -17,4 +17,4 @@ EXPOSE 3000
 COPY . .
 
 # Use nodemon to start the application
-CMD ["npx", "nodemon", "server.js"]
+CMD ["nodemon", "--legacy-watch", "server.js"]

@@ -16,6 +16,7 @@ const airlines = {
   FD: "Air Asia",
   FZ: "Fly Dubai",
   GF: "Gulf Air",
+  JD: "Beijing Capital",
   MF: "Xiamen Ait",
   MH: "Malaysia Airlines",
   MU: "China Eastern",
