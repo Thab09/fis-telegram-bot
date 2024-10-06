@@ -1,18 +1,25 @@
 import { Scenes } from "telegraf";
-import { generateFlightFile, toTitleCase } from "../utils.js";
-import fs from "fs";
+import { generateFlightFile, formatFlightCode, formatDate } from "../utils.js";
 import { getFlightByCity } from "../redisService.js";
+import fs from "fs";
 
 const citySearchScene = new Scenes.WizardScene(
   "citySearch",
   // Step 1: Ask for city name
   (ctx) => {
-    ctx.reply("Enter the city name:");
+    ctx.reply("Enter city name:");
     ctx.wizard.state.data = {}; // Initialize state data
     return ctx.wizard.next();
   },
   // Step 2: Capture city name and ask for Arrival/Departure
   async (ctx) => {
+    // Check message length and return to step 1 if the message is shorter than 2 chars
+    if (ctx.message.text.length < 2) {
+      ctx.reply("City name should have more than 2 letters.");
+
+      ctx.wizard.selectStep(0); // Go back to step 0
+      return ctx.wizard.steps[0](ctx); // Re-execute step 0 logic
+    }
     ctx.wizard.state.data.cityName = await toTitleCase(ctx.message.text); // Save city name
     ctx.reply("Is it an Arrival or Departure?", {
       reply_markup: {
@@ -41,7 +48,8 @@ const citySearchScene = new Scenes.WizardScene(
       const flights = Array.isArray(data) ? data : [data];
       const formattedData = flights
         .map((flight) => {
-          return `${flight.currentDate}\n${flight.airline}\n${flight.flight}\n${flight.city}\nArrival: ${flight.time} / Eta: ${flight.eta}\nStatus: ${flight.status}\n---------------------------------------`;
+          const date = formatDate(flight.currentDate);
+          return `${date}\n${flight.airline} - ${flight.flight}\n${flight.city}\nArrival: ${flight.time} - Eta: ${flight.eta}\nStatus: ${flight.status}\n`;
         })
         .join("\n");
       if (formattedData.length > 4096) {

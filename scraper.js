@@ -3,9 +3,9 @@ import axios from "axios";
 import redisClient from "./redisClient.js";
 
 const airlines = {
-  "3U": "Sichuan",
-  "5W": "Wizz",
-  "6E": "IndiGo",
+  "3U": "Sichuan Airlines",
+  "5W": "Wizz Airlines",
+  "6E": "IndiGo Airlines",
   "8D": "Fits Air",
   AK: "Air Asia",
   B4: "Beond",
@@ -36,6 +36,15 @@ const airlines = {
   WK: "Edelweiss Air",
 };
 
+/**
+ * Function Name: scraper
+ * Description: Fetches flight data from the given URL based on flight type (Arrival/Departure).
+ * Inputs:
+ *  - url: A string representing the target URL to scrape
+ *  - declaration: A string ('Arrival' or 'Departure') indicating the type of flight
+ * Returns:
+ *  - None (The data is processed and stored in Redis)
+ */
 const scraper = async (url, declaration) => {
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
@@ -56,7 +65,6 @@ const scraper = async (url, declaration) => {
   await redisClient.DEL(`flights:byDeclaration:${declaration}`);
 
   for (const row of table.find("tr").toArray()) {
-    // table.find("tr").each(async (i, row) => {
     const isDateRow = $(row).find("tr>td.sumheadtop").length > 0;
 
     // Check if the row contains the date
@@ -100,31 +108,33 @@ const scraper = async (url, declaration) => {
         score: dateTime,
         value: flightKey,
       });
-      // await redisClient.ZADD(`flights:byDeclaration:${declaration}`, {
-      //   score: dateTime,
-      //   value: flightKey,
-      // });
-      // await redisClient.ZADD(`flights:byFlight`, {
-      //   score: dateTime,
-      //   value: flightKey,
-      // });
-      // await redisClient.ZADD(`flights:byCity`, {
-      //   score: dateTime,
-      //   value: flightKey,
-      // });
-      // await redisClient.ZADD(`flights:byAirline`, {
-      //   score: dateTime,
-      //   value: flightKey,
-      // });
     }
   }
-  // });
 };
 
+/**
+ * Function Name: getAirline
+ * Description: Fetches the airline name by taking the first two characters of the flight number
+ *              and matching them to the airline name using the airline object.
+ * Inputs:
+ *  - flight: A string representing the flight number
+ * Returns:
+ *  - Airline name that the flight represents
+ */
 const getAirline = (flight) => {
   const flightPrefix = flight.slice(0, 2);
   return airlines[flightPrefix] || "N/A";
 };
+
+/**
+ * Function Name: deletePreviousSets
+ * Description: Deletes the sets that were stored to Redis in the previous scraping iteration.
+ * Inputs:
+ *  - allFlights: A list of flights by declaration ('Arrival' or 'Departure')
+ *  - declaration: A string ('Arrival' or 'Departure') indicating the type of flight
+ * Returns:
+ *  - None (All the matching data will be deleted)
+ */
 const deletePreviousSets = async (allFlights, declaration) => {
   for (const flightKey of allFlights) {
     await redisClient.ZREM(`flights:byFlight:${declaration}`, flightKey);
@@ -133,17 +143,5 @@ const deletePreviousSets = async (allFlights, declaration) => {
     await redisClient.DEL(flightKey);
   }
 };
-// const deletePreviousSets = async (allFlights, dec) => {
-//   for (const flightKey of allFlights) {
-//     const flightData = await redisClient.HGETALL(flightKey);
-//     const { flight, city, airline, declaration } = flightData;
-
-//     if (dec === declaration) {
-//       await redisClient.ZREM(`flights:byFlight:${flight}`, flightKey);
-//       await redisClient.ZREM(`flights:byCity:${city}`, flightKey);
-//       await redisClient.ZREM(`flights:byCity:${airline}`, flightKey);
-//     }
-//   }
-// };
 
 export default scraper;

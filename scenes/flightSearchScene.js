@@ -1,7 +1,7 @@
 import { Scenes } from "telegraf";
-import { generateFlightFile, formatFlightCode } from "../utils.js";
-import fs from "fs";
+import { generateFlightFile, formatFlightCode, formatDate } from "../utils.js";
 import { getFlightByFlight } from "../redisService.js";
+import fs from "fs";
 
 const flightSearchScene = new Scenes.WizardScene(
   "flightSearch",
@@ -13,8 +13,9 @@ const flightSearchScene = new Scenes.WizardScene(
   },
   // Step 2: Capture flight number and ask for Arrival/Departure
   async (ctx) => {
+    // Check message length and return to step 1 if the message is shorter than 2 chars
     if (ctx.message.text.length < 2) {
-      ctx.reply("Flight number should be longer than 2 characters");
+      ctx.reply("Flight number should have more than 2 letters/numbers.");
 
       ctx.wizard.selectStep(0); // Go back to step 0
       return ctx.wizard.steps[0](ctx); // Re-execute step 0 logic
@@ -49,7 +50,8 @@ const flightSearchScene = new Scenes.WizardScene(
       const flights = Array.isArray(data) ? data : [data];
       const formattedData = flights
         .map((flight) => {
-          return `${flight.currentDate}\n${flight.airline}\n${flight.flight}\n${flight.city}\nArrival: ${flight.time} / Eta: ${flight.eta}\nStatus: ${flight.status}\n`;
+          const date = formatDate(flight.currentDate);
+          return `${date}\n${flight.airline} - ${flight.flight}\n${flight.city}\nArrival: ${flight.time} - Eta: ${flight.eta}\nStatus: ${flight.status}\n`;
         })
         .join("---------------------------------------\n");
       if (formattedData.length > 4096) {

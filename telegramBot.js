@@ -1,18 +1,19 @@
 import { Telegraf, Scenes, session } from "telegraf";
+import { generateFlightFile } from "./utils.js";
+import { getAllFlights } from "./redisService.js";
 import flightSearchScene from "./scenes/flightSearchScene.js";
 import citySearchScene from "./scenes/citySearchScene.js";
 import airlineSearchScene from "./scenes/airlineSearchScene.js";
 import fs from "fs";
-import { generateFlightFile } from "./utils.js";
-import { getAllFlights } from "./redisService.js";
 
-// Stage: where you add the scenes
+// Add the scenes to the stage
 const stage = new Scenes.Stage([
   flightSearchScene,
   citySearchScene,
   airlineSearchScene,
 ]);
-const bot = new Telegraf("7638483303:AAGgZYXlred2vyxS4s_VENi7_doEKGkEEv0");
+
+const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
 // Enable session middleware
 bot.use(session());
 bot.use(stage.middleware()); // Use stage middleware to enable scenes
@@ -87,33 +88,7 @@ bot.hears("All Departing Flights", async (ctx) => {
 // Start webhook via launch method (preferred)
 bot.launch({
   webhook: {
-    domain: "https://4441-27-114-169-7.ngrok-free.app",
+    domain: "https://7016-124-195-208-158.ngrok-free.app",
     port: 3000,
   },
 });
-
-// import fs from "fs";
-// import path from "path";
-// import { fileURLToPath } from "url";
-
-// // Get the directory name for ES modules
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// // Function to generate a text file with flight data
-// const generateFlightFile = (flights, declaration) => {
-//   const filePath = path.join(__dirname, `${declaration}.csv`);
-//   const city = declaration === "Arrival" ? "ORIGIN" : "DESTINATION";
-//   const header = `DATE, AIRLINE, FLIGHT NO., ${city}, TIME, EST, STATUS\n`;
-//   const data = flights
-//     .map((flight) => {
-//       return `${flight.currentDate},${flight.airline}, ${flight.flight}, ${flight.city}, ${flight.time}, ${flight.eta}, ${flight.status}`;
-//       //   return `${flight.airline} ${flight.flight}\n${flight.currentDate}\nLanding Time: ${flight.time}\n${flight.city}\nETA: ${flight.eta}\n${flight.status}\n-------------------------------- \n`;
-//     })
-//     .join("\n");
-
-//   // Write to file
-//   fs.writeFileSync(filePath, header + data, "utf8");
-
-//   return filePath;
-// };

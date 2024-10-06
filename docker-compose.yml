@@ -3,6 +3,12 @@ services:
     build: .
     ports:
       - "3000:3000"
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - ARRIVALS_URL=${ARRIVALS_URL}
+      - DEPARTURES_URL=${DEPARTURES_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     volumes:
       - .:/app
     depends_on:

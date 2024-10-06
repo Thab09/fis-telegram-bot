@@ -13,7 +13,7 @@ export const generateFlightFile = (flights, declaration, filename) => {
   const header = `DATE, AIRLINE, FLIGHT NO., ${city}, TIME, EST, STATUS\n`;
   const data = flights
     .map((flight) => {
-      const date = formatDate(flight.currentDate);
+      const date = formatDateCsv(flight.currentDate);
       return `${date},${flight.airline}, ${flight.flight}, ${flight.city}, ${flight.time}, ${flight.eta}, ${flight.status}`;
       //   return `${flight.airline} ${flight.flight}\n${flight.currentDate}\nLanding Time: ${flight.time}\n${flight.city}\nETA: ${flight.eta}\n${flight.status}\n-------------------------------- \n`;
     })
@@ -25,7 +25,7 @@ export const generateFlightFile = (flights, declaration, filename) => {
   return filePath;
 };
 
-const formatDate = (currentDate) => {
+const formatDateCsv = (currentDate) => {
   // Convert the string to a Date object if it's not already a Date
   const dateObj = new Date(currentDate);
 
@@ -45,6 +45,27 @@ const formatDate = (currentDate) => {
   // const dayOfWeek = dateObj.toLocaleDateString("en-US", { weekday: "long" });
 
   return `${formattedDate}`;
+};
+export const formatDate = (currentDate) => {
+  // Convert the string to a Date object if it's not already a Date
+  const dateObj = new Date(currentDate);
+
+  // Check if the conversion resulted in an invalid Date
+  if (isNaN(dateObj)) {
+    throw new Error("Invalid date format");
+  }
+
+  // Format the date in the desired style
+  const formattedDate = dateObj.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  // Get the day of the week
+  const dayOfWeek = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+
+  return `${formattedDate}, ${dayOfWeek}`;
 };
 
 export const toTitleCase = (text) => {
