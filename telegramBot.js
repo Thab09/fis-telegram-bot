@@ -4,6 +4,8 @@ import { getAllFlights } from "./redisService.js";
 import flightSearchScene from "./scenes/flightSearchScene.js";
 import citySearchScene from "./scenes/citySearchScene.js";
 import airlineSearchScene from "./scenes/airlineSearchScene.js";
+import rateLimit from "telegraf-ratelimit";
+import { rateLimitConfig } from "./utils.js";
 import fs from "fs";
 
 // Add the scenes to the stage
@@ -14,9 +16,13 @@ const stage = new Scenes.Stage([
 ]);
 
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
-// Enable session middleware
+
+//MIDDLEWARES
+bot.use(rateLimit(rateLimitConfig));
 bot.use(session());
-bot.use(stage.middleware()); // Use stage middleware to enable scenes
+bot.use(stage.middleware());
+
+// Options from the start command
 bot.start((ctx) => {
   ctx.reply("Choose an option:", {
     reply_markup: {
@@ -34,18 +40,7 @@ bot.start((ctx) => {
   });
 });
 
-// Handle "Search by Flight"
-bot.hears("Search by Flight", (ctx) => {
-  ctx.scene.enter("flightSearch"); // Enter the flight search scene
-});
-bot.hears("Search by City", (ctx) => {
-  ctx.scene.enter("citySearch"); // Enter the city search scene
-});
-bot.hears("Search by Airline", (ctx) => {
-  ctx.scene.enter("airlineSearch"); // Enter the airline search scene
-});
-
-// Handle "All Arriving Flights"
+// Handle "All Arriving Flights" option
 bot.hears("All Arriving Flights", async (ctx) => {
   const flights = await getAllFlights("Arrival");
   if (flights.length > 0) {
@@ -55,15 +50,14 @@ bot.hears("All Arriving Flights", async (ctx) => {
     // Send the file as a document
     await ctx.sendDocument({ source: filePath });
 
-    // Optional: Remove the file after sending it
-    fs.unlinkSync(filePath); // Clean up the file after sending
+    // Remove the file after sending it
+    fs.unlinkSync(filePath);
   } else {
     await ctx.reply("No arrival flights found.");
   }
-  //   ctx.reply(JSON.stringify(data, null, 2));
 });
 
-// Handle "All Departing Flights"
+// Handle "All Departing Flights" option
 bot.hears("All Departing Flights", async (ctx) => {
   const flights = await getAllFlights("Departure");
   if (flights.length > 0) {
@@ -77,15 +71,29 @@ bot.hears("All Departing Flights", async (ctx) => {
     // Send the file as a document
     await ctx.sendDocument({ source: filePath });
 
-    // Optional: Remove the file after sending it
-    fs.unlinkSync(filePath); // Clean up the file after sending
+    // Remove the file after sending it
+    fs.unlinkSync(filePath);
   } else {
     await ctx.reply("No departure flights found.");
   }
-  // Call function to fetch all departing flights
 });
 
-// Start webhook via launch method (preferred)
+// Handle "Search by Flight" option - User enters the flightSearch Scene
+bot.hears("Search by Flight", (ctx) => {
+  ctx.scene.enter("flightSearch");
+});
+
+// Handle "Search by City" option - User enters the citySearch Scene
+bot.hears("Search by City", (ctx) => {
+  ctx.scene.enter("citySearch");
+});
+
+// Handle "Search by Airline" option - User enters the airlineSearch Scene
+bot.hears("Search by Airline", (ctx) => {
+  ctx.scene.enter("airlineSearch");
+});
+
+// Launch the hook via webhook - using ngrok while in developement
 bot.launch({
   webhook: {
     domain: "https://7016-124-195-208-158.ngrok-free.app",

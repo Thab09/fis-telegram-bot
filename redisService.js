@@ -11,14 +11,14 @@ import redisClient from "./redisClient.js";
 export const getAllFlights = async (declaration) => {
   const data = [];
 
-  //Fetching all the flights based on the declaration
+  // Fetching all the flights based on the declaration
   const allFlights = await redisClient.ZRANGEBYSCORE(
     `flights:byDeclaration:${declaration}`,
     "-inf",
     "+inf"
   );
 
-  //Looping throught the list of allFlights to get the details of each flight
+  // Looping throught the list of allFlights to get the details of each flight
   for (const flight of allFlights) {
     const flightDetails = await redisClient.HGETALL(flight);
     data.push(flightDetails);
@@ -38,7 +38,7 @@ export const getAllFlights = async (declaration) => {
 export const getFlightByFlight = async (flight, declaration) => {
   const data = [];
 
-  //Fetching all the flights based on the flight number
+  // Fetching all the flights based on the flight number
   const flightByFlight = await redisClient.ZRANGEBYSCORE(
     `flights:byFlight:${declaration}`,
     "-inf",
@@ -99,7 +99,7 @@ export const getFlightByCity = async (city, declaration) => {
 export const getFlightByAirline = async (airline, declaration) => {
   const data = [];
 
-  //Fetching all the flights based on the airline name
+  // Fetching all the flights based on the airline name
   const flightByAirline = await redisClient.ZRANGEBYSCORE(
     `flights:byAirline:${declaration}`,
     "-inf",

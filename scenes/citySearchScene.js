@@ -3,6 +3,16 @@ import { generateFlightFile, formatFlightCode, formatDate } from "../utils.js";
 import { getFlightByCity } from "../redisService.js";
 import fs from "fs";
 
+/*
+ * Telegram Scene: citySearchScene
+ * Description: A scene consisting of three steps to collect the necessary information
+ *              from the telegram user to get the search result.
+ * Inputs:
+ *  - Step 1: user will be prompted to enter a city name
+ *  - Step 2: user will be prompted to select a declaration ('Arrival' or 'Departure')
+ * Returns:
+ *  - A formatted string of flight details or a csv file if the message is longer than 4096 chars
+ */
 const citySearchScene = new Scenes.WizardScene(
   "citySearch",
   // Step 1: Ask for city name
@@ -11,16 +21,18 @@ const citySearchScene = new Scenes.WizardScene(
     ctx.wizard.state.data = {}; // Initialize state data
     return ctx.wizard.next();
   },
+
   // Step 2: Capture city name and ask for Arrival/Departure
   async (ctx) => {
     // Check message length and return to step 1 if the message is shorter than 2 chars
     if (ctx.message.text.length < 2) {
       ctx.reply("City name should have more than 2 letters.");
-
       ctx.wizard.selectStep(0); // Go back to step 0
       return ctx.wizard.steps[0](ctx); // Re-execute step 0 logic
     }
-    ctx.wizard.state.data.cityName = await toTitleCase(ctx.message.text); // Save city name
+
+    ctx.wizard.state.data.cityName = await toTitleCase(ctx.message.text);
+
     ctx.reply("Is it an Arrival or Departure?", {
       reply_markup: {
         inline_keyboard: [
@@ -31,13 +43,14 @@ const citySearchScene = new Scenes.WizardScene(
     });
     return ctx.wizard.next();
   },
+
   // Step 3: Capture "Arrival" or "Departure" and fetch result
   async (ctx) => {
-    ctx.wizard.state.data.flightType = ctx.update.callback_query.data; // Save Arrival/Departure
+    ctx.wizard.state.data.flightType = ctx.update.callback_query.data;
     try {
-      // Fetch results based on city name and choice
       const { cityName, flightType } = ctx.wizard.state.data;
 
+      // Fetch results based on city name and declaration
       const data = await getFlightByCity(cityName, flightType);
 
       if (!data || (Array.isArray(data) && data.length === 0)) {
@@ -46,12 +59,14 @@ const citySearchScene = new Scenes.WizardScene(
       }
 
       const flights = Array.isArray(data) ? data : [data];
+
       const formattedData = flights
         .map((flight) => {
           const date = formatDate(flight.currentDate);
           return `${date}\n${flight.airline} - ${flight.flight}\n${flight.city}\nArrival: ${flight.time} - Eta: ${flight.eta}\nStatus: ${flight.status}\n`;
         })
         .join("\n");
+
       if (formattedData.length > 4096) {
         const filePath = generateFlightFile(
           flights,
@@ -59,18 +74,16 @@ const citySearchScene = new Scenes.WizardScene(
           `${cityName} ${flightType}s`
         );
 
-        // Send the file as a document
         await ctx.sendDocument({ source: filePath });
 
-        // Optional: Remove the file after sending it
-        fs.unlinkSync(filePath); // Clean up the file after sending
+        fs.unlinkSync(filePath);
       } else {
         await ctx.reply(formattedData);
       }
     } catch (error) {
       console.error("Error handling flight data:", error);
       await ctx.reply(
-        "An error occurred while processing flight data. Please try again later."
+        "An error occurred while processing Search flight by City. Please try again later."
       );
     } finally {
       return ctx.scene.leave();
